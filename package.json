@@ -1,0 +1,35 @@
+{
+  "name": "mochikit",
+  "version": "0.1.0",
+  "description": "MochiKit — a modern, plugin-driven TypeScript AI Agent framework with multi-agent collaboration, unified memory and pluggable infrastructure.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "MOCHIKIT_RUN_INTEGRATION=1 vitest run tests/integration",
+    "example": "tsx"
+  },
+  "keywords": ["ai", "agent", "multi-agent", "llm", "framework", "claude", "glm", "mochikit"],
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  }
+}
