@@ -99,4 +99,35 @@ const bus = new FileMessageBus('./.mochikit/mailbox');
 
 你可以基于这些类型实现自定义的协作协议。
 
+## Team 协议状态机
+
+MochiKit 内置了团队协议系统（`src/collaboration/protocols.ts`），支持两种结构化协议：
+
+### 关机协议
+
+Lead 请求队友优雅关机：
+
+```ts
+import { ProtocolManager } from 'mochikit';
+
+const protocols = new ProtocolManager();
+const reqId = protocols.createRequest('shutdown', 'lead', 'worker', 'Please shut down');
+// 发送 shutdown_request 消息
+// 队友回复 shutdown_response 后，通过 handleResponse 更新状态
+const result = protocols.handleResponse('shutdown_response', reqId, true);
+// result.status === 'approved'
+```
+
+### 计划审批协议
+
+队友在开始高风险操作前，提交计划给 Lead 审批：
+
+```ts
+const reqId = protocols.createRequest('plan_approval', 'worker', 'lead', planText);
+// Lead 审批
+protocols.handleResponse('plan_approval_response', reqId, true); // approved
+```
+
+`send_message` 工具现在支持 `request_id` 和 `metadata` 参数，用于关联请求和响应。
+
 下一章：[09-任务系统-TaskStore](09-任务系统-TaskStore.md)。

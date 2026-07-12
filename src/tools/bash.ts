@@ -15,6 +15,10 @@ export class BashTool extends BaseTool {
       properties: {
         command: { type: 'string' },
         timeout: { type: 'number', description: 'ms (default 60000)' },
+        run_in_background: {
+          type: 'boolean',
+          description: 'Set to true to run this command in the background while the agent continues working.',
+        },
       },
       required: ['command'],
     },

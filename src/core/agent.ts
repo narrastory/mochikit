@@ -21,6 +21,9 @@ import type { PluginHost } from '../plugins/plugin.js';
 import type { Memory } from '../memory/memory.js';
 import type { MessageBus } from '../infra/message-bus.js';
 import type { TaskStore } from '../infra/task-store.js';
+import type { PromptSection } from './system-prompt.js';
+import { SkillRegistry } from '../infra/skill-registry.js';
+import { BackgroundTaskManager } from '../infra/background-tasks.js';
 
 export interface AgentOptions {
   name: string;
@@ -38,6 +41,21 @@ export interface AgentOptions {
   maxTokens?: number;
   fallbackModel?: string;
   cwd?: string;
+  /**
+   * Dynamic prompt sections assembled at runtime (tutorial s10).
+   * When provided, these replace the static systemPrompt at assembly time.
+   * The static systemPrompt is still used as the initial ctx.system value.
+   */
+  systemSections?: PromptSection[];
+  /** Path to a skills/ directory for on-demand skill loading (tutorial s07). */
+  skillsDir?: string;
+  /** Manager for background command execution (tutorial s13). */
+  backgroundTasks?: BackgroundTaskManager;
+  /**
+   * When true, auto-inject relevant memories into the conversation at
+   * run start (tutorial s09). Requires `memory` to be set.
+   */
+  autoMemory?: boolean;
 }
 
 export class Agent implements PluginHost {
@@ -49,6 +67,9 @@ export class Agent implements PluginHost {
   readonly memory?: Memory;
   readonly bus?: MessageBus;
   readonly tasks?: TaskStore;
+  readonly skills?: SkillRegistry;
+  readonly backgroundTasks: BackgroundTaskManager;
+  readonly systemSections?: PromptSection[];
   protected ctx: ConversationContext;
   protected opts: AgentOptions;
 
@@ -59,11 +80,18 @@ export class Agent implements PluginHost {
     this.memory = opts.memory;
     this.bus = opts.bus;
     this.tasks = opts.tasks;
+    this.systemSections = opts.systemSections;
     this.registry = new ToolRegistry();
     for (const t of opts.tools ?? []) this.registry.register(t);
     this.hooks = opts.hooks ?? new HookManagerClass();
     this.permission = opts.permission ?? new PermissionManagerClass();
     this.ctx = new ConversationContext(opts.systemPrompt);
+
+    // Skills (s07) — scan at construction time (scan itself is async, caller should await init())
+    if (opts.skillsDir) {
+      this.skills = new SkillRegistry();
+    }
+    this.backgroundTasks = opts.backgroundTasks ?? new BackgroundTaskManager();
   }
 
   /** Register a tool onto this agent. */
@@ -90,14 +118,34 @@ export class Agent implements PluginHost {
     this.ctx = new ConversationContext(this.opts.systemPrompt);
   }
 
+  /** Initialise async resources (skill scanning). Call once before run(). */
+  async init(): Promise<void> {
+    if (this.opts.skillsDir && this.skills) {
+      await this.skills.scan(this.opts.skillsDir);
+    }
+  }
+
   /** Run the agent on a user input; returns the final assistant text. */
   async run(input: string): Promise<string> {
     const toolContextExtras: Partial<ToolContext> = {
       memory: this.memory,
       bus: this.bus,
       tasks: this.tasks,
-      runtime: { agent: this },
+      runtime: { agent: this, backgroundTasks: this.backgroundTasks },
     };
+
+    // Auto-memory injection (s09): query relevant memories and prepend to input
+    let effectiveInput = input;
+    if (this.opts.autoMemory && this.memory) {
+      const relevant = await this.memory.query(input, 3);
+      if (relevant.length > 0) {
+        const memBlock = relevant
+          .map((e) => `[Memory: ${e.name}] ${e.body}`)
+          .join('\n');
+        effectiveInput = `<relevant_memories>\n${memBlock}\n</relevant_memories>\n\n${input}`;
+      }
+    }
+
     const loopOpts: AgentLoopOptions = {
       agentName: this.name,
       cwd: this.opts.cwd ?? process.cwd(),
@@ -112,8 +160,10 @@ export class Agent implements PluginHost {
       maxTokens: this.opts.maxTokens,
       fallbackModel: this.opts.fallbackModel,
       toolContextExtras,
+      systemSections: this.systemSections,
+      backgroundTasks: this.backgroundTasks,
     };
     const loop = new AgentLoop(loopOpts);
-    return loop.run(input);
+    return loop.run(effectiveInput);
   }
 }

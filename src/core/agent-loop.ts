@@ -20,6 +20,15 @@ import type { ToolContext } from './tool.js';
 import type { ToolRegistry } from './tool-registry.js';
 import type { ContentBlock, LLMResponse, Message, ToolResultBlock, ToolUseBlock } from './types.js';
 import { extractText } from './types.js';
+import type { PromptSection } from './system-prompt.js';
+import { createPromptCache } from './system-prompt.js';
+import type { BackgroundTaskManager } from '../infra/background-tasks.js';
+import {
+  incrementRoundsSinceTodo,
+  getRoundsSinceTodo,
+  resetRoundsSinceTodo,
+  TODO_NAG_THRESHOLD,
+} from '../tools/todo-write.js';
 
 export interface AgentLoopOptions {
   agentName: string;
@@ -40,6 +49,10 @@ export interface AgentLoopOptions {
   toolContextExtras?: Partial<ToolContext>;
   /** Optional model to fall back to under sustained overload. */
   fallbackModel?: string;
+  /** Dynamic system prompt sections (s10). Assembled each turn when provided. */
+  systemSections?: PromptSection[];
+  /** Background task manager for async command execution (s13). */
+  backgroundTasks?: BackgroundTaskManager;
 }
 
 export class AgentLoop {
@@ -62,7 +75,7 @@ export class AgentLoop {
   }
 
   async run(input: string): Promise<string> {
-    const { ctx, hooks, agentName } = this.opts;
+    const { ctx, hooks, agentName, systemSections } = this.opts;
 
     // UserPromptSubmit hook
     let userInput = input;
@@ -74,19 +87,65 @@ export class AgentLoop {
 
     ctx.append({ role: 'user', content: userInput });
 
+    // Dynamic system prompt (s10) — cache and assemble each turn
+    const promptCache = systemSections ? createPromptCache() : null;
+
     const state = createRecoveryState(this.opts.model);
     let turns = 0;
     let continuationAttempts = 0;
 
     while (turns < this.opts.maxTurns) {
       turns++;
+
+      // --- Background task notification injection (s13) ---
+      const bgTasks = this.opts.backgroundTasks;
+      if (bgTasks) {
+        const completed = bgTasks.check();
+        for (const t of completed) {
+          const summary = t.output.slice(0, 200);
+          const note =
+            `<task_notification>\n` +
+            `<task_id>${t.bgId}</task_id>\n` +
+            `<status>${t.status}</status>\n` +
+            `<command>${t.command}</command>\n` +
+            `<summary>${summary}${t.output.length > 200 ? '…' : ''}</summary>\n` +
+            `</task_notification>`;
+          ctx.append({ role: 'user', content: note });
+        }
+      }
+
       // 1. cheap compaction
       ctx.replace(this.opts.compaction.compact(ctx.messages));
+
+      // --- Dynamic system prompt assembly (s10) ---
+      const effectiveSystem = promptCache
+        ? promptCache.get(
+            {
+              workDir: this.opts.cwd,
+              tools: this.opts.tools.list().map((t) => t.definition.name),
+              hasMemory: this.opts.toolContextExtras?.memory !== undefined,
+              hasSkills: false,
+            },
+            systemSections!,
+          )
+        : ctx.system;
+
+      // --- Todo nag reminder (s05) ---
+      incrementRoundsSinceTodo();
+      if (getRoundsSinceTodo() >= TODO_NAG_THRESHOLD && ctx.messages.length > 0) {
+        ctx.append({
+          role: 'user',
+          content:
+            '<reminder>You haven\'t updated your todo list in a while. ' +
+            'Consider using todo_write to track progress on your current task.</reminder>',
+        });
+        resetRoundsSinceTodo();
+      }
 
       // 2. call LLM with recovery
       const params = {
         model: state.currentModel,
-        system: ctx.system,
+        system: effectiveSystem,
         messages: ctx.messages,
         tools: this.opts.tools.definitions(),
         max_tokens: this.opts.maxTokens,
@@ -130,6 +189,18 @@ export class AgentLoop {
       const toolUses = response.content.filter((b): b is ToolUseBlock => b.type === 'tool_use');
       const results = await this.dispatchTools(toolUses);
 
+      // Merge background task notifications with tool results (s13)
+      if (bgTasks) {
+        const bgComplete = bgTasks.check();
+        for (const t of bgComplete) {
+          results.push({
+            type: 'tool_result',
+            tool_use_id: t.toolUseId,
+            content: `[Background task ${t.bgId} ${t.status}]\n${t.output.slice(0, 500)}`,
+          });
+        }
+      }
+
       if (results.length > 0) {
         ctx.append({ role: 'user', content: results });
       }
@@ -150,12 +221,17 @@ export class AgentLoop {
   }
 
   private async dispatchOne(block: ToolUseBlock): Promise<ToolResultBlock> {
-    const { hooks, permission, agentName } = this.opts;
+    const { hooks, permission, agentName, backgroundTasks } = this.opts;
     const toolCtx: ToolContext = {
       agentName,
       cwd: this.opts.cwd,
       ...this.opts.toolContextExtras,
     };
+
+    // todo_write tracking (s05)
+    if (block.name === 'todo_write') {
+      resetRoundsSinceTodo();
+    }
 
     // PreToolUse hook may block.
     if (hooks) {
@@ -178,7 +254,18 @@ export class AgentLoop {
       }
     }
 
-    // Execute.
+    // Background task spawn (s13): if bash with run_in_background, spawn async
+    if (block.name === 'bash' && block.input.run_in_background && backgroundTasks) {
+      const cmd = typeof block.input.command === 'string' ? block.input.command : 'unknown';
+      const bgId = backgroundTasks.spawn(cmd, block.id, toolCtx.cwd);
+      return toolResult(
+        block.id,
+        `[Background task ${bgId} started] Command: ${cmd}. Result will be available when complete.`,
+        false,
+      );
+    }
+
+    // Execute synchronously.
     let output: string;
     let isError = false;
     try {

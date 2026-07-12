@@ -24,12 +24,14 @@
 
 ## ✨ Features
 
-- **🤖 Multi-Agent Collaboration** — Manager-Worker delegation, Sequential Chains, Team mailbox communication, isolated sub-agents
+- **🤖 Multi-Agent Collaboration** — Manager-Worker delegation, Sequential Chains, Team mailbox communication with protocol state machine, isolated sub-agents
 - **🔌 Plugin Architecture** — Bundle tools + hooks + permission rules into reusable plugins; install with `agent.use(plugin)`
-- **🧠 Unified Memory** — `Memory` interface with Markdown file storage (YAML frontmatter + index); `VectorStore` with cosine similarity; Chroma/Pinecone extension contracts
+- **📋 Skill Loading** — Declarative SKILL.md files; two-level loading (catalog in system prompt, full content on demand)
+- **🧠 Unified Memory** — `Memory` interface with Markdown file storage (YAML frontmatter + index); auto-injection of relevant memories; consolidation/merge; `VectorStore` with cosine similarity
 - **🪝 Lifecycle Hooks** — `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `Stop` — priority-ordered, async, can block or rewrite
 - **🔐 Permission Pipeline** — 3-gate pipeline: deny → rule → ask → resolver; built-in `AllowAllResolver` / `DenyAllResolver`
-- **📦 Built-in Tools** — File I/O, Bash, Web Search, Web Reader, Memory, Task DAG, Team messaging
+- **📦 Built-in Tools** — File I/O, Bash (sync + background), Web Search, Web Reader, TodoWrite (in-conversation planning), Memory, Task DAG, Team messaging
+- **⚡ Background Tasks** — Long-running bash commands run asynchronously; agent continues working, gets notified on completion
 - **🛡️ Error Recovery** — Exponential backoff + jitter for 429/529, reactive compaction on `prompt_too_long`, fallback model failover
 - **📐 Strict TypeScript** — Zero `any`, full type safety, OOP + dependency injection throughout
 - **🧪 Fully Tested** — 38 unit tests (mock LLM) + 10 integration tests (real GLM-4.7), documented in Chinese & English
@@ -113,8 +115,9 @@ npx tsx examples/05-custom-plugin.ts         # Custom plugin: tools + hooks + ru
 |---|---|
 | 01 | 安装与配置 |
 | 02 | 第一个 Agent |
-| 03 | 工具系统（内置 + 自定义） |
-| 04 | 记忆系统（MarkdownMemory） |
+| 03 | 工具系统（内置 + 自定义 + TodoWrite + 后台） |
+| 03b | Skill 加载系统（声明式知识注入） |
+| 04 | 记忆系统（MarkdownMemory + 自动注入 + 合并） |
 | 05 | 向量存储（InMemory + Chroma/Pinecone 契约） |
 | 06 | 多智能体 — Manager-Worker |
 | 07 | 顺序链 — SequentialChain |
@@ -190,12 +193,13 @@ Everything is constructor-injected — swap any component without touching the l
 MochiKit/
 ├── src/
 │   ├── core/           # Agent loop, types, LLM adapter, hooks, permission,
-│   │                   # compaction, recovery, tool registry, context
-│   ├── collaboration/  # ManagerWorker, SequentialChain, Team, Subagent
-│   ├── memory/         # Memory interface, MarkdownMemory, VectorStore, InMemoryVectorStore
-│   ├── infra/          # MessageBus (InMemory/JSONL), TaskStore (DAG), Config (dotenv)
-│   ├── tools/          # Built-in tools: fs, bash, web_search, web_reader,
-│   │                   # memory_read/write, task create/claim/complete, team messaging
+│   │                   # compaction, recovery, system-prompt assembly, tool registry
+│   ├── collaboration/  # ManagerWorker, SequentialChain, Team, Subagent, Protocols
+│   ├── memory/         # Memory interface, MarkdownMemory (consolidation), VectorStore
+│   ├── infra/          # MessageBus (InMemory/JSONL), TaskStore (DAG),
+│   │                   # SkillRegistry, BackgroundTaskManager, Config (dotenv)
+│   ├── tools/          # Built-in tools: fs, bash (sync+bg), web, memory,
+│   │                   # task, team, todo_write, skill loading
 │   ├── plugins/        # Plugin interface, PluginBuilder, PluginRegistry
 │   └── index.ts        # Barrel export (public API)
 ├── tests/

@@ -54,6 +54,32 @@ const agent = new Agent({
 });
 ```
 
+## 动态 System Prompt
+
+如果需要根据运行时状态动态组装 system prompt，可以使用 `systemSections`：
+
+```ts
+import { type PromptSection } from 'mochikit';
+
+const sections: PromptSection[] = [
+  { key: 'identity', content: 'You are a helpful coding agent. Be concise.' },
+  { key: 'workspace', content: `Working directory: ${process.cwd()}` },
+  {
+    key: 'memory',
+    content: 'Relevant memories are below.',
+    condition: (ctx) => ctx.hasMemory, // 仅当有 Memory 时才加载
+  },
+];
+
+const agent = new Agent({
+  // ...
+  systemPrompt: 'fallback', // 静态后备
+  systemSections: sections,
+});
+```
+
+条件章节 (`condition`) 只在满足条件时才拼入 prompt，节省 token。
+
 ## 4. 多轮对话
 
 `agent.run()` 会把对话历史保留在 Agent 内部。连续调用即可多轮：

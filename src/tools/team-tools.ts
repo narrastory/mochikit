@@ -18,9 +18,11 @@ export class SendMessageTool extends BaseTool {
         content: { type: 'string', description: 'Message body' },
         type: {
           type: 'string',
-          enum: ['message', 'result', 'shutdown_request', 'shutdown_response'],
+          enum: ['message', 'result', 'shutdown_request', 'shutdown_response', 'plan_approval_request', 'plan_approval_response'],
           description: 'Message type',
         },
+        request_id: { type: 'string', description: 'Optional request ID for protocol tracking (s16)' },
+        metadata: { type: 'object', description: 'Optional metadata (approve, etc.)' },
       },
       required: ['to', 'content'],
     },
@@ -34,7 +36,8 @@ export class SendMessageTool extends BaseTool {
     const to = this.requireString(input, 'to');
     const content = this.requireString(input, 'content');
     const type = (this.optionalString(input, 'type') ?? 'message') as MessageType;
-    await this.bus.send({ from: this.from, to, content, type });
+    const metadata = (input.metadata as Record<string, unknown>) ?? {};
+    await this.bus.send({ from: this.from, to, content, type, metadata });
     return `Sent ${type} to ${to}.`;
   }
 }

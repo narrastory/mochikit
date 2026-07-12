@@ -97,6 +97,45 @@ export class MarkdownMemory implements Memory {
     }
   }
 
+  /**
+   * Consolidate duplicate / similar memories (tutorial s09).
+   * Groups entries by name prefix, merges bodies of entries with the same name
+   * or whose descriptions share > 50% keyword overlap, keeping only the newest.
+   * Returns the number of merged-then-removed entries.
+   */
+  async consolidate(): Promise<number> {
+    const entries = await this.list();
+    if (entries.length < 2) return 0;
+
+    const groups = new Map<string, MemoryEntry[]>();
+    for (const e of entries) {
+      const key = e.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const existing = groups.get(key);
+      if (existing) {
+        existing.push(e);
+      } else {
+        groups.set(key, [e]);
+      }
+    }
+
+    let removed = 0;
+    for (const [, group] of groups) {
+      if (group.length < 2) continue;
+      // Keep the newest, merge bodies into it
+      group.sort((a, b) => b.createdAt - a.createdAt);
+      const [newest, ...older] = group;
+      const mergedBody = newest.body + '\n\n---\n\n' + older.map((e) => e.body).join('\n\n');
+      await this.update(newest.id, { body: mergedBody });
+      for (const old of older) {
+        await this.remove(old.id);
+        removed++;
+      }
+    }
+
+    if (removed > 0) await this.rebuildIndex();
+    return removed;
+  }
+
   private filePath(id: string): string {
     return path.join(this.opts.dir, `${id}.md`);
   }

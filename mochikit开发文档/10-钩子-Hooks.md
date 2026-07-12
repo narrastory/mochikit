@@ -100,4 +100,19 @@ interface HookResult {
 }
 ```
 
+## autoMemory 与 UserPromptSubmit
+
+设置 `autoMemory: true` 时，Agent 内部通过 `UserPromptSubmit` 钩子实现记忆自动注入。你也可以手写同样的逻辑：
+
+```ts
+agent.registerHook('UserPromptSubmit', async (p) => {
+  const payload = p as { input: string; agentName: string };
+  const relevant = await memory.query(payload.input, 3);
+  if (relevant.length > 0) {
+    const memBlock = relevant.map(e => `[Memory: ${e.name}] ${e.body}`).join('\n');
+    return { replaceInput: `<relevant_memories>\n${memBlock}\n</relevant_memories>\n\n${payload.input}` };
+  }
+});
+```
+
 下一章：[11-权限系统](11-权限系统.md)。
