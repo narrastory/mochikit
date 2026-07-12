@@ -13,12 +13,18 @@
   },
   "scripts": {
     "build": "tsc",
+    "prepare": "npm run build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:integration": "MOCHIKIT_RUN_INTEGRATION=1 vitest run tests/integration",
     "example": "tsx"
   },
+  "files": [
+    "dist",
+    "skills",
+    ".env.example"
+  ],
   "keywords": ["ai", "agent", "multi-agent", "llm", "framework", "claude", "glm", "mochikit"],
   "license": "MIT",
   "engines": { "node": ">=18" },
