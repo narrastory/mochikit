@@ -109,7 +109,7 @@ export class MarkdownMemory implements Memory {
 
     const groups = new Map<string, MemoryEntry[]>();
     for (const e of entries) {
-      const key = e.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const key = e.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       const existing = groups.get(key);
       if (existing) {
         existing.push(e);
