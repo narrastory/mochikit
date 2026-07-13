@@ -1,10 +1,25 @@
 /**
  * MochiKit — a modern, plugin-driven TypeScript AI Agent framework.
  *
- * Public API surface.
+ * Public API surface.  Re-exports are organized by module.
+ *
+ * ## Module Map
+ *
+ * | Section       | Purpose                                           |
+ * |---------------|---------------------------------------------------|
+ * | Core          | Agent loop, LLM client, tools, hooks, permissions |
+ * | Collaboration | Manager-worker, chains, teams, sub-agents         |
+ * | Memory        | Memory stores, vector stores                      |
+ * | Infrastructure| Message bus, task store, config, skills           |
+ * | Plugins       | Plugin builder, registry                          |
+ * | Tools         | Built-in tool implementations                     |
  */
 
-// core
+// ── Core ───────────────────────────────────────────────────────────
+// The heart of MochiKit: the agent loop, LLM abstraction, tool system,
+// lifecycle hooks, permission pipeline, context compaction, recovery,
+// and the user-facing Agent class.
+
 export * from './core/types.js';
 export * from './core/llm-client.js';
 export * from './core/tool.js';
@@ -18,31 +33,54 @@ export * from './core/agent-loop.js';
 export * from './core/agent.js';
 export * from './core/system-prompt.js';
 
-// collaboration
+// ── Collaboration ───────────────────────────────────────────────────
+// Multi-agent patterns: spawn subagents, chain agents sequentially,
+// coordinate teams through a shared message bus.
+
 export * from './collaboration/subagent.js';
 export * from './collaboration/manager-worker.js';
 export * from './collaboration/chain.js';
 export * from './collaboration/team.js';
 export * from './collaboration/protocols.js';
 
-// memory
+// ── Memory ──────────────────────────────────────────────────────────
+// Persistent memory stores: filesystem-backed (MarkdownMemory),
+// vector-backed semantic search (VectorStore, InMemoryVectorStore).
+
 export * from './memory/memory.js';
 export * from './memory/markdown-memory.js';
 export * from './memory/vector-store.js';
 export * from './memory/in-memory-vector-store.js';
 
-// infra
+// ── Infrastructure ──────────────────────────────────────────────────
+// Cross-cutting infrastructure: message bus, task DAG store,
+// configuration loader, skill registry, background task runner.
+
 export * from './infra/message-bus.js';
 export * from './infra/task-store.js';
 export * from './infra/config.js';
 export * from './infra/skill-registry.js';
 export * from './infra/background-tasks.js';
 
-// plugins
+// ── Plugins ─────────────────────────────────────────────────────────
+// The plugin system: build reusable bundles of tools, hooks, and rules,
+// then apply them to agents via PluginRegistry.
+
 export * from './plugins/plugin.js';
 export * from './plugins/plugin-host.js';
 
-// tools
+// ── MCP ─────────────────────────────────────────────────────────────
+// Model Context Protocol integration: connect to MCP servers
+// (local stdio subprocess or remote Streamable HTTP), discover tools,
+// and register them as namespaced MochiKit tools.
+// Servers can be local (stdio subprocess) or remote (Streamable HTTP).
+
+export * from './mcp/index.js';
+
+// ── Tools ───────────────────────────────────────────────────────────
+// Built-in tool implementations: filesystem, shell, web, memory,
+// task management, team communication, todo lists, and skill dispatch.
+
 export * from './tools/fs.js';
 export * from './tools/bash.js';
 export * from './tools/web-reader.js';

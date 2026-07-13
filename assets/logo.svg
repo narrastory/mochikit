@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!--
+    MochiKit Logo — compact app-icon style
+    Outer: rounded hexagon (Node.js ecosystem)
+    Inner: soft circle (mochi) + centered node (agent core)
+    6 satellite dots at vertices (harness components)
+    Theme: warm yellow #F0A020 on transparent
+  -->
+
+  <!-- Filled rounded hexagon background -->
+  <path
+    d="M100 18 L166 56 L166 144 L100 182 L34 144 L34 56 Z"
+    fill="#F0A020"
+    stroke="#F0A020"
+    stroke-width="2"
+    stroke-linejoin="round"
+  />
+
+  <!-- Inner circle cutout (the mochi — soft core) -->
+  <circle cx="100" cy="100" r="44" fill="#1a1a2e" />
+
+  <!-- Central node (the agent loop — pulsing core) -->
+  <circle cx="100" cy="100" r="12" fill="#F0A020" />
+
+  <!-- 6 satellite nodes at hex vertices (tools, memory, hooks, permission, recovery, plugins) -->
+  <!-- Top -->
+  <circle cx="100" cy="36" r="5" fill="#1a1a2e" />
+  <!-- Top-right -->
+  <circle cx="157" cy="67" r="5" fill="#1a1a2e" />
+  <!-- Bottom-right -->
+  <circle cx="157" cy="133" r="5" fill="#1a1a2e" />
+  <!-- Bottom -->
+  <circle cx="100" cy="164" r="5" fill="#1a1a2e" />
+  <!-- Bottom-left -->
+  <circle cx="43" cy="133" r="5" fill="#1a1a2e" />
+  <!-- Top-left -->
+  <circle cx="43" cy="67" r="5" fill="#1a1a2e" />
+
+  <!-- Thin connector lines from core to satellites -->
+  <line x1="100" y1="88" x2="100" y2="41" stroke="#1a1a2e" stroke-width="2" />
+  <line x1="112" y1="93" x2="152" y2="72" stroke="#1a1a2e" stroke-width="2" />
+  <line x1="112" y1="107" x2="152" y2="128" stroke="#1a1a2e" stroke-width="2" />
+  <line x1="100" y1="112" x2="100" y2="159" stroke="#1a1a2e" stroke-width="2" />
+  <line x1="88" y1="107" x2="48" y2="128" stroke="#1a1a2e" stroke-width="2" />
+  <line x1="88" y1="93" x2="48" y2="72" stroke="#1a1a2e" stroke-width="2" />
+</svg>

@@ -25,11 +25,38 @@
     "skills",
     ".env.example"
   ],
-  "keywords": ["ai", "agent", "multi-agent", "llm", "framework", "claude", "glm", "mochikit"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MochiKit/MochiKit.git"
+  },
+  "homepage": "https://github.com/MochiKit/MochiKit#readme",
+  "author": "MochiKit",
+  "keywords": [
+    "ai",
+    "agent",
+    "multi-agent",
+    "llm",
+    "framework",
+    "ai-agent",
+    "agent-framework",
+    "tool-use",
+    "function-calling",
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "glm",
+    "deepseek",
+    "openai",
+    "typescript",
+    "mochikit"
+  ],
   "license": "MIT",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {

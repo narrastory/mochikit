@@ -11,7 +11,7 @@ npm test                   # Run all tests (unit + integration)
 npm run test:unit          # Unit tests only (vitest run tests/unit) — mock LLM, no network
 npm run test:integration   # Integration tests (MOCHIKIT_RUN_INTEGRATION=1 vitest run tests/integration) — real GLM
 npx vitest run tests/unit/<file>.test.ts   # Run a single unit-test file
-npx tsx examples/01-simple-agent.ts        # Run one example directly
+npx tsx docs/examples/01-simple-agent.ts        # Run one example directly
 ```
 
 - A `.env` file (copied from `.env.example`) with `API_KEY` is required for integration tests and examples that hit GLM.
