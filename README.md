@@ -306,10 +306,6 @@ MochiKit follows strict TypeScript with OOP + dependency injection. Every compon
 
 ---
 
-<p align="center">
-  <img src="./assets/c1.png" alt="pic" />
-</p>
-
 ## License
 
 MIT © 2024 MochiKit
