@@ -263,10 +263,6 @@ MochiKit 遵循严格 TypeScript + OOP + 依赖注入。所有组件通过构造
 
 ---
 
-<p align="center">
-  <img src="./assets/c1.png" alt="pic" />
-</p>
-
 ## 许可证
 
 MIT © 2024 MochiKit
