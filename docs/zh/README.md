@@ -3,6 +3,8 @@
 MochiKit 是一个基于 TypeScript + Node.js 的 AI Agent 开发框架。这份文档面向**普通开发者**，
 目标是：看完就能用。文档不讲框架内部原理，只讲“怎么装、怎么用、怎么扩展”。
 
+> 🇬🇧 This documentation is also available in [English](../en/README.md).
+
 ## 这份文档适合谁
 
 - 会写 TypeScript / JavaScript 的后端或全栈开发者。
